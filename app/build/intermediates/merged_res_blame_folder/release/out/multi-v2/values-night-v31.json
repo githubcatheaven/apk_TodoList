@@ -1,0 +1,28 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.canme.todo.app-mergeReleaseResources-2:/values-night-v31/values-night-v31.xml",
+            "map": [
+                {
+                    "source": "D:\\Dev\\dev\\apk_TodoList\\app\\src\\main\\res\\values-night-v31\\themes.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "57",
+                        "endLines": "20",
+                        "endColumns": "12",
+                        "endOffsets": "1237"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "20",
+                        "endColumns": "12",
+                        "endOffsets": "1074"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.canme.todo.app-mergeReleaseResources-2:/values-v31/values-v31.xml",
+            "map": [
+                {
+                    "source": "D:\\Dev\\dev\\apk_TodoList\\app\\src\\main\\res\\values-v31\\themes.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "57",
+                        "endLines": "16",
+                        "endColumns": "12",
+                        "endOffsets": "1032"
+                    },
+                    "to": {
+                        "startLines": "14",
+                        "startColumns": "4",
+                        "startOffsets": "702",
+                        "endLines": "28",
+                        "endColumns": "12",
+                        "endOffsets": "1579"
+                    }
+                },
+                {
+                    "source": "D:\\Program\\Android\\Gradle\\caches\\transforms-3\\1e73625bd7cb3fc43ca7e85a4d708fbd\\transformed\\core-splashscreen-1.0.1\\res\\values-v31\\values-v31.xml",
+                    "from": {
+                        "startLines": "2,9",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,473",
+                        "endLines": "8,13",
+                        "endColumns": "12,12",
+                        "endOffsets": "468,697"
+                    }
+                }
+            ]
+        }
+    ]
+}

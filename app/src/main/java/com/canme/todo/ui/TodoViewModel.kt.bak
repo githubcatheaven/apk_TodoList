@@ -1,0 +1,335 @@
+package com.canme.todo.ui
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.canme.todo.data.Todo
+import com.canme.todo.repository.TodoRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * UI state data class for managing the todo screen state
+ */
+data class TodoUiState(
+    val isAddingTodo: Boolean = false,
+    val newTodoText: String = "",
+    val showDeleteDialog: Boolean = false,
+    val todoToDelete: Todo? = null,
+    val errorMessage: String? = null,
+    val isLoading: Boolean = false
+)
+
+/**
+ * ViewModel for managing todo list UI state and business logic.
+ * Handles user interactions and coordinates with the repository layer.
+ */
+@HiltViewModel
+class TodoViewModel @Inject constructor(
+    private val repository: TodoRepository
+) : ViewModel() {
+    
+    companion object {
+        private const val MAX_TODO_LENGTH = 500
+    }
+    
+    // Private mutable state for UI state management
+    private val _uiState = MutableStateFlow(TodoUiState())
+    val uiState: StateFlow<TodoUiState> = _uiState.asStateFlow()
+    
+    // Reactive flow of todos from the repository
+    val todos = repository.getAllTodos()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
+    /**
+     * Shows the add todo dialog by updating the UI state
+     */
+    fun showAddTodoDialog() {
+        _uiState.value = _uiState.value.copy(
+            isAddingTodo = true,
+            newTodoText = "",
+            errorMessage = null
+        )
+    }
+    
+    /**
+     * Hides the add todo dialog and clears any input
+     */
+    fun hideAddTodoDialog() {
+        _uiState.value = _uiState.value.copy(
+            isAddingTodo = false,
+            newTodoText = "",
+            errorMessage = null
+        )
+    }
+    
+    /**
+     * Updates the new todo text as the user types
+     * Includes real-time validation feedback
+     */
+    fun updateNewTodoText(text: String) {
+        // Prevent input beyond maximum length
+        val trimmedText = if (text.length > MAX_TODO_LENGTH) {
+            text.take(MAX_TODO_LENGTH)
+        } else {
+            text
+        }
+        
+        _uiState.value = _uiState.value.copy(
+            newTodoText = trimmedText,
+            errorMessage = null // Clear error when user starts typing
+        )
+    }
+    
+    /**
+     * Adds a new todo item to the repository
+     * Validates input and handles errors appropriately
+     */
+    fun addTodo() {
+        val currentText = _uiState.value.newTodoText.trim()
+        
+        // Validate input
+        val validationError = validateTodoText(currentText)
+        if (validationError != null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = validationError
+            )
+            return
+        }
+        
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        viewModelScope.launch {
+            try {
+                val newTodo = Todo(text = currentText)
+                val result = repository.insertTodo(newTodo)
+                
+                result.fold(
+                    onSuccess = {
+                        // Successfully added todo, hide dialog
+                        _uiState.value = _uiState.value.copy(
+                            isAddingTodo = false,
+                            newTodoText = "",
+                            errorMessage = null,
+                            isLoading = false
+                        )
+                    },
+                    onFailure = { exception ->
+                        // Handle specific error types
+                        val errorMessage = when (exception) {
+                            is IllegalArgumentException -> "Invalid input: ${exception.message}"
+                            else -> "Failed to add todo: ${exception.message}"
+                        }
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = errorMessage,
+                            isLoading = false
+                        )
+                    }
+                )
+            } catch (exception: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Unexpected error occurred while adding todo",
+                    isLoading = false
+                )
+            }
+        }
+    }
+    
+    /**
+     * Toggles the completion status of a todo item
+     * Includes comprehensive error handling and user feedback
+     */
+    fun toggleTodoCompletion(todo: Todo) {
+        viewModelScope.launch {
+            try {
+                val result = repository.toggleTodoCompletion(todo.id)
+                
+                result.fold(
+                    onSuccess = {
+                        // Success - the UI will automatically update via the todos StateFlow
+                        // Clear any existing errors
+                        if (_uiState.value.errorMessage != null) {
+                            _uiState.value = _uiState.value.copy(errorMessage = null)
+                        }
+                    },
+                    onFailure = { exception ->
+                        val errorMessage = when (exception) {
+                            is IllegalArgumentException -> "Todo not found"
+                            else -> "Failed to update todo: ${exception.message}"
+                        }
+                        _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
+                    }
+                )
+            } catch (exception: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Unexpected error occurred while updating todo"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Shows the delete confirmation dialog for a specific todo
+     */
+    fun showDeleteDialog(todo: Todo) {
+        _uiState.value = _uiState.value.copy(
+            showDeleteDialog = true,
+            todoToDelete = todo,
+            errorMessage = null
+        )
+    }
+    
+    /**
+     * Hides the delete confirmation dialog
+     */
+    fun hideDeleteDialog() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteDialog = false,
+            todoToDelete = null,
+            errorMessage = null
+        )
+    }
+    
+    /**
+     * Deletes the currently selected todo item
+     */
+    fun deleteTodo() {
+        val todoToDelete = _uiState.value.todoToDelete ?: return
+        
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        
+        viewModelScope.launch {
+            try {
+                val result = repository.deleteTodo(todoToDelete)
+                
+                result.fold(
+                    onSuccess = {
+                        // Successfully deleted todo, hide dialog
+                        _uiState.value = _uiState.value.copy(
+                            showDeleteDialog = false,
+                            todoToDelete = null,
+                            errorMessage = null,
+                            isLoading = false
+                        )
+                    },
+                    onFailure = { exception ->
+                        // Handle specific error types
+                        val errorMessage = when (exception) {
+                            is IllegalArgumentException -> "Todo not found or invalid"
+                            else -> "Failed to delete todo: ${exception.message}"
+                        }
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = errorMessage,
+                            isLoading = false
+                        )
+                    }
+                )
+            } catch (exception: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Unexpected error occurred while deleting todo",
+                    isLoading = false
+                )
+            }
+        }
+    }
+    
+    /**
+     * Updates an existing todo item
+     * Includes validation and comprehensive error handling
+     */
+    fun updateTodo(todo: Todo) {
+        viewModelScope.launch {
+            try {
+                // Validate the todo before updating
+                val validationError = validateTodoText(todo.text)
+                if (validationError != null) {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Cannot update todo: $validationError"
+                    )
+                    return@launch
+                }
+                
+                val result = repository.updateTodo(todo)
+                
+                result.fold(
+                    onSuccess = {
+                        // Success - the UI will automatically update via the todos StateFlow
+                        // Clear any existing errors
+                        if (_uiState.value.errorMessage != null) {
+                            _uiState.value = _uiState.value.copy(errorMessage = null)
+                        }
+                    },
+                    onFailure = { exception ->
+                        val errorMessage = when (exception) {
+                            is IllegalArgumentException -> "Invalid todo data: ${exception.message}"
+                            else -> "Failed to update todo: ${exception.message}"
+                        }
+                        _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
+                    }
+                )
+            } catch (exception: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Unexpected error occurred while updating todo"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Validates todo text input according to business rules
+     * @param text The text to validate
+     * @return Error message if validation fails, null if valid
+     */
+    private fun validateTodoText(text: String): String? {
+        return when {
+            text.isBlank() -> "Todo text cannot be empty"
+            text.length > MAX_TODO_LENGTH -> "Todo text cannot exceed $MAX_TODO_LENGTH characters"
+            else -> null
+        }
+    }
+    
+    /**
+     * Validates the current new todo text and returns whether it's valid
+     * Also updates the UI state with any validation errors
+     */
+    fun validateCurrentInput(): Boolean {
+        val currentText = _uiState.value.newTodoText.trim()
+        val validationError = validateTodoText(currentText)
+        
+        _uiState.value = _uiState.value.copy(
+            errorMessage = validationError
+        )
+        
+        return validationError == null
+    }
+    
+    /**
+     * Gets the current character count for the new todo text
+     */
+    fun getCurrentCharacterCount(): Int {
+        return _uiState.value.newTodoText.length
+    }
+    
+    /**
+     * Checks if the current input is approaching the character limit
+     */
+    fun isApproachingCharacterLimit(): Boolean {
+        return _uiState.value.newTodoText.length > (MAX_TODO_LENGTH * 0.8).toInt()
+    }
+    
+    /**
+     * Clears any error message from the UI state
+     */
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+}

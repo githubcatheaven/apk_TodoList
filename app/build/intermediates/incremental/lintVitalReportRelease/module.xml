@@ -1,0 +1,18 @@
+<lint-module
+    format="1"
+    dir="D:\Dev\dev\apk_TodoList\app"
+    name=":app"
+    type="APP"
+    maven="Todo:app:"
+    agpVersion="8.1.4"
+    buildFolder="build"
+    bootClassPath="D:\Program\Android\platforms\android-34\android.jar;D:\Program\Android\build-tools\33.0.1\core-lambda-stubs.jar"
+    javaSourceLevel="1.8"
+    compileTarget="android-34">
+  <lintOptions
+      abortOnError="true"
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>

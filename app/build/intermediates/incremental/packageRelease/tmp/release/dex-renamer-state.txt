@@ -1,0 +1,4 @@
+#Fri Oct 03 23:39:44 NZDT 2025
+base.0=D\:\\Dev\\dev\\apk_TodoList\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

@@ -1,0 +1,62 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.canme.todo.app-mergeReleaseResources-2:/values-night-v8/values-night-v8.xml",
+            "map": [
+                {
+                    "source": "D:\\Dev\\dev\\apk_TodoList\\app\\src\\main\\res\\values-night\\themes.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "57",
+                        "endLines": "15",
+                        "endColumns": "12",
+                        "endOffsets": "898"
+                    },
+                    "to": {
+                        "startLines": "4",
+                        "startColumns": "4",
+                        "startOffsets": "193",
+                        "endLines": "17",
+                        "endColumns": "12",
+                        "endOffsets": "939"
+                    }
+                },
+                {
+                    "source": "D:\\Program\\Android\\Gradle\\caches\\transforms-3\\1e73625bd7cb3fc43ca7e85a4d708fbd\\transformed\\core-splashscreen-1.0.1\\res\\values-night-v8\\values-night-v8.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "85",
+                        "endOffsets": "136"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "107",
+                        "endColumns": "85",
+                        "endOffsets": "188"
+                    }
+                },
+                {
+                    "source": "D:\\Dev\\dev\\apk_TodoList\\app\\src\\main\\res\\values-night\\colors.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "117",
+                        "endColumns": "51",
+                        "endOffsets": "164"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "51",
+                        "endOffsets": "102"
+                    }
+                }
+            ]
+        }
+    ]
+}

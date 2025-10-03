@@ -1,0 +1,262 @@
+package com.canme.todo.ui.screens
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.canme.todo.data.Todo
+import com.canme.todo.ui.TodoViewModel
+import com.canme.todo.ui.components.AddTodoDialog
+import com.canme.todo.ui.components.DeleteConfirmationDialog
+import com.canme.todo.ui.components.EmptyState
+import com.canme.todo.ui.components.TodoItem
+import com.canme.todo.ui.theme.Dimensions
+import com.canme.todo.ui.theme.TodoTheme
+
+/**
+ * Main screen composable that displays the todo list with all integrated UI components.
+ * Handles the complete todo management workflow including adding, toggling, and deleting todos.
+ * 
+ * @param viewModel The TodoViewModel for state management and business logic
+ * @param modifier Optional modifier for styling
+ */
+@Composable
+fun TodoListScreen(
+    viewModel: TodoViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val todos by viewModel.todos.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    
+    // Show error messages as snackbars
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+    
+    Scaffold(
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "My Todos",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    scrolledContainerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.showAddTodoDialog() },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.semantics {
+                    contentDescription = "Add new todo. Opens dialog to create a new todo item."
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add todo icon"
+                )
+            }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (todos.isEmpty()) {
+                // Show empty state when no todos exist
+                EmptyState(
+                    onAddFirstTodo = { viewModel.showAddTodoDialog() },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Show todo list
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(Dimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(Dimensions.spaceSmall)
+                ) {
+                    items(
+                        items = todos,
+                        key = { todo -> todo.id }
+                    ) { todo ->
+                        TodoItem(
+                            todo = todo,
+                            onToggleCompletion = { viewModel.toggleTodoCompletion(it) },
+                            onLongPress = { viewModel.showDeleteDialog(it) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    // Add Todo Dialog
+    AddTodoDialog(
+        isVisible = uiState.isAddingTodo,
+        todoText = uiState.newTodoText,
+        errorMessage = uiState.errorMessage,
+        isLoading = uiState.isLoading,
+        onTextChange = { viewModel.updateNewTodoText(it) },
+        onConfirm = { viewModel.addTodo() },
+        onDismiss = { viewModel.hideAddTodoDialog() }
+    )
+    
+    // Delete Confirmation Dialog
+    DeleteConfirmationDialog(
+        isVisible = uiState.showDeleteDialog,
+        todoToDelete = uiState.todoToDelete,
+        isLoading = uiState.isLoading,
+        onConfirm = { viewModel.deleteTodo() },
+        onDismiss = { viewModel.hideDeleteDialog() }
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TodoListScreenEmptyPreview() {
+    TodoTheme {
+        // Preview with empty state - would need mock ViewModel
+        // This is a simplified preview showing the structure
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "My Todos",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Todo"
+                    )
+                }
+            }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                EmptyState(
+                    onAddFirstTodo = { },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TodoListScreenWithItemsPreview() {
+    TodoTheme {
+        // Preview with sample todos
+        val sampleTodos = listOf(
+            Todo(id = 1, text = "Complete project documentation", isCompleted = false),
+            Todo(id = 2, text = "Review pull requests", isCompleted = true),
+            Todo(id = 3, text = "Plan team meeting agenda", isCompleted = false)
+        )
+        
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "My Todos",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Todo"
+                    )
+                }
+            }
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sampleTodos) { todo ->
+                    TodoItem(
+                        todo = todo,
+                        onToggleCompletion = { },
+                        onLongPress = { }
+                    )
+                }
+            }
+        }
+    }
+}
