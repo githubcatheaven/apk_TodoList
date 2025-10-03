@@ -3,7 +3,7 @@
 A modern, feature-rich Todo application built with **Jetpack Compose** and **Material Design 3**. This app showcases advanced Android development techniques including drag-and-drop reordering, category management, and a clean MVVM architecture.
 
 ## 🎨 Snapshots
-<img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/ea134738-ba45-44d8-bedb-76264e7a94f7" />
+<img width="360" height="792" alt="image" src="https://github.com/user-attachments/assets/ea134738-ba45-44d8-bedb-76264e7a94f7" />
 
 
 ## ✨ Features
